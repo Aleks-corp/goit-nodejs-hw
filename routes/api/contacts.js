@@ -1,46 +1,21 @@
 import express from 'express';
-import {
-  listContacts,
-  getContactById,
-  addContact,
-  updateContact,
-  removeContact,
-} from '../../models/contacts.js';
+import contactsServises from '../../models/contacts.js';
 import ApiError from '../../helpers/ApiError.js';
-import Joi from 'joi';
+import ValidateData from '../../validation/validationContacts.js';
 
-const contactsSchema = Joi.object({
-  name: Joi.string().required().messages({
-    'string.base': `'name' should be a type of 'text'`,
-    'string.empty': `'name' cannot be an empty field`,
-    'any.required': `missing required 'name' field`,
-  }),
-  email: Joi.string().email().required().messages({
-    'string.email': `'email' should be a type of 'email'`,
-    'string.empty': `'email' cannot be an empty field`,
-    'any.required': `missing required 'email' field`,
-  }),
-  phone: Joi.string().required().messages({
-    'string.empty': `'phone' cannot be an empty field`,
-    'any.required': `missing required 'phone' field`,
-  }),
-});
-
-const router = express.Router();
-
-router.get('/', async (req, res, next) => {
+const getContacts = async (req, res, next) => {
   try {
-    const contacts = await listContacts();
+    const contacts = await contactsServises.listContacts();
     res.json(contacts);
   } catch (error) {
     next(error);
   }
-});
+};
 
-router.get('/:contactId', async (req, res, next) => {
+const getContactById = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const contact = await getContactById(contactId);
+    const contact = await contactsServises.getContactById(contactId);
     if (!contact) {
       throw ApiError(404);
     }
@@ -48,37 +23,21 @@ router.get('/:contactId', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+};
 
-router.post('/', async (req, res, next) => {
+const addContact = async (req, res, next) => {
   try {
-    const { name, email, phone } = req.body;
-    if (!name && !email && !phone) {
-      throw ApiError(400, 'Missing fields');
-    }
-    const { error } = contactsSchema.validate(req.body);
-    if (error) {
-      throw ApiError(400, error.message);
-    }
-    const contact = await addContact(req.body);
+    const contact = await contactsServises.addContact(req.body);
     res.status(201).json(contact);
   } catch (error) {
     next(error);
   }
-});
+};
 
-router.put('/:contactId', async (req, res, next) => {
+const updateContact = async (req, res, next) => {
   try {
-    const { name, email, phone } = req.body;
-    if (!name && !email && !phone) {
-      throw ApiError(400, 'Missing fields');
-    }
-    const { error } = contactsSchema.validate(req.body);
-    if (error) {
-      throw ApiError(400, error.message);
-    }
     const { contactId } = req.params;
-    const contact = await updateContact(contactId, req.body);
+    const contact = await contactsServises.updateContact(contactId, req.body);
     if (!contact) {
       throw ApiError(404);
     }
@@ -86,12 +45,12 @@ router.put('/:contactId', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+};
 
-router.delete('/:contactId', async (req, res, next) => {
+const removeContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const contact = await removeContact(contactId);
+    const contact = await contactsServises.removeContact(contactId);
     if (!contact) {
       throw ApiError(404);
     }
@@ -99,6 +58,14 @@ router.delete('/:contactId', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+};
+
+const router = express.Router();
+
+router.get('/', getContacts);
+router.get('/:contactId', getContactById);
+router.post('/', ValidateData, addContact);
+router.put('/:contactId', ValidateData, updateContact);
+router.delete('/:contactId', removeContact);
 
 export default router;
