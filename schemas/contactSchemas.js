@@ -1,7 +1,6 @@
 import Joi from 'joi';
-import ApiError from '../helpers/ApiError.js';
 
-const contactsSchema = Joi.object({
+const contactsAddSchema = Joi.object({
   name: Joi.string().required().messages({
     'string.base': `'name' should be a type of 'text'`,
     'string.empty': `'name' cannot be an empty field`,
@@ -18,20 +17,4 @@ const contactsSchema = Joi.object({
   }),
 });
 
-const ValidateData = (req, res, next) => {
-  try {
-    const { name, email, phone } = req.body;
-    if (!name && !email && !phone) {
-      throw ApiError(400, 'Missing fields');
-    }
-    const { error } = contactsSchema.validate(req.body);
-    if (error) {
-      throw ApiError(400, error.message);
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
-export default ValidateData;
+export default { contactsAddSchema };
