@@ -1,71 +1,23 @@
 import express from 'express';
-import contactsServises from '../../models/contacts.js';
-import ApiError from '../../helpers/ApiError.js';
-import ValidateData from '../../validation/validationContacts.js';
+import { isEmptyBody } from '../../middlewares/index.js';
+import { validateBody } from '../../decorators/index.js';
+import { contactSchemas } from '../../schemas/index.js';
+import { contactsController } from '../../controllers/index.js';
 
-const getContacts = async (req, res, next) => {
-  try {
-    const contacts = await contactsServises.listContacts();
-    res.json(contacts);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getContactById = async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const contact = await contactsServises.getContactById(contactId);
-    if (!contact) {
-      throw ApiError(404);
-    }
-    res.json(contact);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const addContact = async (req, res, next) => {
-  try {
-    const contact = await contactsServises.addContact(req.body);
-    res.status(201).json(contact);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateContact = async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const contact = await contactsServises.updateContact(contactId, req.body);
-    if (!contact) {
-      throw ApiError(404);
-    }
-    res.json(contact);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const removeContact = async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const contact = await contactsServises.removeContact(contactId);
-    if (!contact) {
-      throw ApiError(404);
-    }
-    res.json({ message: 'Contact deleted' });
-  } catch (error) {
-    next(error);
-  }
-};
+const { getAll, getById, add, updateById, removeById } = contactsController;
+const { contactsAddSchema } = contactSchemas;
 
 const router = express.Router();
 
-router.get('/', getContacts);
-router.get('/:contactId', getContactById);
-router.post('/', ValidateData, addContact);
-router.put('/:contactId', ValidateData, updateContact);
-router.delete('/:contactId', removeContact);
+router.get('/', getAll);
+router.get('/:contactId', getById);
+router.post('/', isEmptyBody, validateBody(contactsAddSchema), add);
+router.put(
+  '/:contactId',
+  isEmptyBody,
+  validateBody(contactsAddSchema),
+  updateById
+);
+router.delete('/:contactId', removeById);
 
 export default router;
