@@ -1,44 +1,51 @@
-import {
-  listContacts,
-  getContactById,
-  addContact,
-  updateContact,
-  removeContact,
-} from '../models/contacts.js';
+import Contact from '../models/contact.js';
 import { ApiError } from '../helpers/index.js';
 import { ctrlWrapper } from '../decorators/index.js';
 
-const getAll = async (req, res) => {
-  const contacts = await listContacts();
+const getAllContact = async (req, res) => {
+  const contacts = await Contact.find();
   res.json(contacts);
 };
 
-const getById = async (req, res) => {
+const getContactById = async (req, res) => {
   const { contactId } = req.params;
-  const contact = await getContactById(contactId);
+  const contact = await Contact.findById(contactId);
   if (!contact) {
     throw ApiError(404);
   }
   res.json(contact);
 };
 
-const add = async (req, res) => {
-  const contact = await addContact(req.body);
+const addContact = async (req, res) => {
+  const contact = await Contact.create(req.body);
   res.status(201).json(contact);
 };
 
-const updateById = async (req, res) => {
+const updateContactById = async (req, res) => {
   const { contactId } = req.params;
-  const contact = await updateContact(contactId, req.body);
+  const contact = await Contact.findByIdAndUpdate(contactId, req.body, {
+    new: true,
+  });
   if (!contact) {
     throw ApiError(404);
   }
   res.json(contact);
 };
 
-const removeById = async (req, res) => {
+const updateStatusContact = async (req, res) => {
   const { contactId } = req.params;
-  const contact = await removeContact(contactId);
+  const contact = await Contact.findByIdAndUpdate(contactId, req.body, {
+    new: true,
+  });
+  if (!contact) {
+    throw ApiError(404);
+  }
+  res.json(contact);
+};
+
+const removeContactById = async (req, res) => {
+  const { contactId } = req.params;
+  const contact = await Contact.findByIdAndRemove(contactId);
   if (!contact) {
     throw ApiError(404);
   }
@@ -46,9 +53,10 @@ const removeById = async (req, res) => {
 };
 
 export default {
-  getAll: ctrlWrapper(getAll),
-  getById: ctrlWrapper(getById),
-  add: ctrlWrapper(add),
-  updateById: ctrlWrapper(updateById),
-  removeById: ctrlWrapper(removeById),
+  getAllContact: ctrlWrapper(getAllContact),
+  getContactById: ctrlWrapper(getContactById),
+  addContact: ctrlWrapper(addContact),
+  updateContactById: ctrlWrapper(updateContactById),
+  removeContactById: ctrlWrapper(removeContactById),
+  updateStatusContact: ctrlWrapper(updateStatusContact),
 };
