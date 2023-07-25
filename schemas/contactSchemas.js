@@ -1,13 +1,15 @@
 import Joi from 'joi';
 
+import { emailRegexp } from '../constants/contactsConstants.js';
+
 const contactsAddSchema = Joi.object({
   name: Joi.string().required().messages({
     'string.base': `'name' should be a type of 'text'`,
     'string.empty': `'name' cannot be an empty field`,
     'any.required': `missing required 'name' field`,
   }),
-  email: Joi.string().email().required().messages({
-    'string.email': `'email' should be a type of 'email'`,
+  email: Joi.string().pattern(emailRegexp).required().messages({
+    'string.pattern.base': `'email' should be a type of 'email'`,
     'string.empty': `'email' cannot be an empty field`,
     'any.required': `missing required 'email' field`,
   }),
