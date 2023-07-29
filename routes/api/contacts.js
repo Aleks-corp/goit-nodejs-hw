@@ -3,6 +3,7 @@ import {
   isEmptyBody,
   isEmptyBodyStatus,
   isValidId,
+  authenticateToken,
 } from '../../middlewares/index.js';
 import { validateBody } from '../../decorators/index.js';
 import { contactSchemas } from '../../schemas/index.js';
@@ -18,25 +19,32 @@ const {
 } = contactsController;
 const { contactsAddSchema, contactsUpdateStatusSchema } = contactSchemas;
 
-const router = express.Router();
+const contactsRouter = express.Router();
 
-router.get('/', getAllContact);
-router.get('/:contactId', isValidId, getContactById);
-router.post('/', isEmptyBody, validateBody(contactsAddSchema), addContact);
-router.put(
+contactsRouter.use(authenticateToken);
+
+contactsRouter.get('/', getAllContact);
+contactsRouter.get('/:contactId', isValidId, getContactById);
+contactsRouter.post(
+  '/',
+  isEmptyBody,
+  validateBody(contactsAddSchema),
+  addContact
+);
+contactsRouter.put(
   '/:contactId',
   isValidId,
   isEmptyBody,
   validateBody(contactsAddSchema),
   updateContactById
 );
-router.patch(
+contactsRouter.patch(
   '/:contactId/favorite',
   isValidId,
   isEmptyBodyStatus,
   validateBody(contactsUpdateStatusSchema),
   updateStatusContact
 );
-router.delete('/:contactId', isValidId, removeContactById);
+contactsRouter.delete('/:contactId', isValidId, removeContactById);
 
-export default router;
+export default contactsRouter;
