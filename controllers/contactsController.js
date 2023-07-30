@@ -4,16 +4,14 @@ import { ctrlWrapper } from '../decorators/index.js';
 
 const getAllContact = async (req, res) => {
   const { _id: owner } = req.user;
-  const { page = 1, limit = 0, favorite } = req.query;
+  const { page = 1, limit = 0, ...query } = req.query;
   const skip = (page - 1) * limit;
   const contacts = await Contact.find(
-    favorite ? { owner, favorite } : { owner },
+    { owner, ...query },
     '-owner -createdAt -updatedAt',
     { skip, limit }
   );
-  const totalHits = await Contact.count(
-    favorite ? { owner, favorite } : { owner }
-  );
+  const totalHits = await Contact.count({ owner, ...query });
   res.json({ totalHits, contacts });
 };
 
