@@ -18,7 +18,12 @@ const usersSchema = Joi.object({
 const usersUpdateSubscriptionSchema = Joi.object({
   subscription: Joi.string()
     .valid(...userSubscription)
-    .required(),
+    .required()
+    .messages({
+      'string.empty': `'subscription' cannot be an empty field`,
+      'any.required': `missing required 'subscription' field`,
+      'any.only': `'subscription' can be only one of "${userSubscription}" value`,
+    }),
 });
 
 export default { usersSchema, usersUpdateSubscriptionSchema };

@@ -38,11 +38,10 @@ const login = async (req, res) => {
   if (!(await bcrypt.compare(password, user.password))) {
     throw ApiError(401, 'Email or password is wrong');
   }
-
-  user.token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '23h' });
-  await user.save();
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '23h' });
+  await User.findByIdAndUpdate(user._id, { token });
   res.json({
-    token: user.token,
+    token,
     user: {
       email: user.email,
       subscription: user.subscription,
@@ -50,7 +49,37 @@ const login = async (req, res) => {
   });
 };
 
+const logout = async (req, res) => {
+  const { _id } = req.user;
+  await User.findByIdAndUpdate(_id, { token: '' });
+  res.status(204).json();
+};
+
+const getCurrent = async (req, res) => {
+  const { email, subscription } = req.user;
+  res.json({ email, subscription });
+};
+
+const updateUserSubscription = async (req, res) => {
+  const { user, body } = req;
+  if (user.subscription === body.subscription) {
+    res.json({ message: 'You already have this subscription' });
+    return;
+  }
+  const { email, subscription } = await User.findByIdAndUpdate(
+    user._id,
+    { subscription: body.subscription },
+    {
+      new: true,
+    }
+  );
+  res.json({ email, subscription });
+};
+
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
+  logout: ctrlWrapper(logout),
+  getCurrent: ctrlWrapper(getCurrent),
+  updateUserSubscription: ctrlWrapper(updateUserSubscription),
 };

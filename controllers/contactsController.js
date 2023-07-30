@@ -3,13 +3,26 @@ import { ApiError } from '../helpers/index.js';
 import { ctrlWrapper } from '../decorators/index.js';
 
 const getAllContact = async (req, res) => {
-  const contacts = await Contact.find();
-  res.json(contacts);
+  const { _id: owner } = req.user;
+  const { page = 1, limit = 0, favorite } = req.query;
+  const skip = (page - 1) * limit;
+  const contacts = await Contact.find(
+    favorite ? { owner, favorite } : { owner },
+    '-owner -createdAt -updatedAt',
+    { skip, limit }
+  );
+  const totalHits = await Contact.count(
+    favorite ? { owner, favorite } : { owner }
+  );
+  res.json({ totalHits, contacts });
 };
 
 const getContactById = async (req, res) => {
   const { contactId } = req.params;
-  const contact = await Contact.findById(contactId);
+  const contact = await Contact.findById(contactId).populate(
+    'owner',
+    'email subscription'
+  );
   if (!contact) {
     throw ApiError(404);
   }
@@ -17,8 +30,12 @@ const getContactById = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const contact = await Contact.create(req.body);
-  res.status(201).json(contact);
+  const contact = await Contact.create({
+    ...req.body,
+    owner: req.user._id,
+  });
+  const { _id, name, email, phone, favorite } = contact;
+  res.status(201).json({ _id, name, email, phone, favorite });
 };
 
 const updateContactById = async (req, res) => {
@@ -29,7 +46,8 @@ const updateContactById = async (req, res) => {
   if (!contact) {
     throw ApiError(404);
   }
-  res.json(contact);
+  const { _id, name, email, phone, favorite } = contact;
+  res.json({ _id, name, email, phone, favorite });
 };
 
 const updateStatusContact = async (req, res) => {
@@ -40,7 +58,8 @@ const updateStatusContact = async (req, res) => {
   if (!contact) {
     throw ApiError(404);
   }
-  res.json(contact);
+  const { _id, name, email, phone, favorite } = contact;
+  res.json({ _id, name, email, phone, favorite });
 };
 
 const removeContactById = async (req, res) => {
