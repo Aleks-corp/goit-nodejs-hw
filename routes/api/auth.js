@@ -5,12 +5,18 @@ import { authController } from '../../controllers/index.js';
 import { usersSchemas } from '../../schemas/index.js';
 import { validateBody } from '../../decorators/index.js';
 
-import { authenticateToken } from '../../middlewares/index.js';
+import { authenticateToken, upload } from '../../middlewares/index.js';
 
 const { usersSchema, usersUpdateSubscriptionSchema } = usersSchemas;
 
-const { register, login, logout, getCurrent, updateUserSubscription } =
-  authController;
+const {
+  register,
+  login,
+  logout,
+  getCurrent,
+  updateUserSubscription,
+  updateAvatar,
+} = authController;
 
 const authRouter = express.Router();
 
@@ -24,6 +30,12 @@ authRouter.patch(
   authenticateToken,
   validateBody(usersUpdateSubscriptionSchema),
   updateUserSubscription
+);
+authRouter.patch(
+  '/avatars',
+  authenticateToken,
+  upload.single('avatar'),
+  updateAvatar
 );
 
 export default authRouter;
