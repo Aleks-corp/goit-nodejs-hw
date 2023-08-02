@@ -2,11 +2,14 @@ import User from '../models/user.js';
 import bcrypt from 'bcryptjs';
 import gravatar from 'gravatar';
 
-import { ApiError } from '../helpers/index.js';
+import { ApiError, jimpAvatar } from '../helpers/index.js';
 import { ctrlWrapper } from '../decorators/index.js';
 
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
+
+import fs from 'fs/promises';
+import path from 'path';
 
 const { JWT_SECRET } = process.env;
 
@@ -82,10 +85,26 @@ const updateUserSubscription = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
-  const { user, body, file } = req;
-  console.log('file:', file);
-  console.log('body:', body);
-  console.log('user:', user);
+  const { path: oldPath, filename } = req.file;
+  const avatarsPath = path.resolve('public');
+  const newPath = path.join(avatarsPath, 'avatars', filename);
+  await fs.rename(oldPath, newPath);
+  await jimpAvatar(newPath);
+
+  const { _id, avatarURL: oldAvatar } = req.user;
+  const oldAvatarPath = path.join(avatarsPath, oldAvatar);
+  try {
+    await fs.unlink(oldAvatarPath);
+  } catch {}
+  const avatarURL = path.join('avatars', filename);
+  await User.findByIdAndUpdate(
+    _id,
+    { avatarURL },
+    {
+      new: true,
+    }
+  );
+  res.json({ avatarURL });
 };
 
 export default {
