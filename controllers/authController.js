@@ -1,16 +1,21 @@
 import User from '../models/user.js';
 import bcrypt from 'bcryptjs';
+import gravatar from 'gravatar';
 
-import { ApiError } from '../helpers/index.js';
+import { ApiError, jimpAvatar } from '../helpers/index.js';
 import { ctrlWrapper } from '../decorators/index.js';
 
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 
+import fs from 'fs/promises';
+import path from 'path';
+
 const { JWT_SECRET } = process.env;
 
 const register = async (req, res) => {
   const { email, password } = req.body;
+  const url = gravatar.url(email, { protocol: 'http', s: '250' });
   const user = await User.findOne({ email });
   if (user) {
     throw ApiError(409, 'Email in use');
@@ -19,11 +24,13 @@ const register = async (req, res) => {
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
+    avatarURL: url,
   });
 
   res.status(201).json({
     user: {
       email: newUser.email,
+      avatarURL: newUser.avatarURL,
       subscription: newUser.subscription,
     },
   });
@@ -44,6 +51,7 @@ const login = async (req, res) => {
     token,
     user: {
       email: user.email,
+      avatarURL: user.avatarURL,
       subscription: user.subscription,
     },
   });
@@ -56,8 +64,8 @@ const logout = async (req, res) => {
 };
 
 const getCurrent = async (req, res) => {
-  const { email, subscription } = req.user;
-  res.json({ email, subscription });
+  const { email, subscription, avatarURL } = req.user;
+  res.json({ email, subscription, avatarURL });
 };
 
 const updateUserSubscription = async (req, res) => {
@@ -66,14 +74,37 @@ const updateUserSubscription = async (req, res) => {
     res.json({ message: 'You already have this subscription' });
     return;
   }
-  const { email, subscription } = await User.findByIdAndUpdate(
+  const { email, subscription, avatarURL } = await User.findByIdAndUpdate(
     user._id,
     { subscription: body.subscription },
     {
       new: true,
     }
   );
-  res.json({ email, subscription });
+  res.json({ email, subscription, avatarURL });
+};
+
+const updateAvatar = async (req, res) => {
+  const { path: oldPath, filename } = req.file;
+  const avatarsPath = path.resolve('public');
+  const newPath = path.join(avatarsPath, 'avatars', filename);
+  await fs.rename(oldPath, newPath);
+  await jimpAvatar(newPath);
+
+  const { _id, avatarURL: oldAvatar } = req.user;
+  const oldAvatarPath = path.join(avatarsPath, oldAvatar);
+  try {
+    await fs.unlink(oldAvatarPath);
+  } catch {}
+  const avatarURL = path.join('avatars', filename);
+  await User.findByIdAndUpdate(
+    _id,
+    { avatarURL },
+    {
+      new: true,
+    }
+  );
+  res.json({ avatarURL });
 };
 
 export default {
@@ -82,4 +113,5 @@ export default {
   logout: ctrlWrapper(logout),
   getCurrent: ctrlWrapper(getCurrent),
   updateUserSubscription: ctrlWrapper(updateUserSubscription),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
