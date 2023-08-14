@@ -128,7 +128,7 @@ const getVerification = async (req, res) => {
     throw ApiError(404, 'User not found');
   }
   if (user.verify) {
-    throw ApiError(401, 'Non verified user');
+    throw ApiError(400, 'Verification has already been passed');
   }
   await User.findByIdAndUpdate(user._id, {
     verify: true,
@@ -154,7 +154,7 @@ const resendVerify = async (req, res) => {
   };
   const maildata = await sendMail(msg);
   console.log('maildata:', maildata);
-  res.json({ message: 'Verification Email resend successful' });
+  res.json({ message: 'Verification email sent' });
 };
 
 export default {
